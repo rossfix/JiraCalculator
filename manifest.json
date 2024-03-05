@@ -1,0 +1,15 @@
+{
+  "name": "JiraSprintCapacityCalculator",
+  "description": "Sprint capacity view for leftover items",
+  "version": "1.0",
+  "icons": { "48": "jiraCalculator.png" },
+  "content_scripts": [
+    {
+      "matches": ["*://*/*jira*"],
+      "js": ["contentScript.js"],
+      "run_at": "document_end"
+    }
+  ],
+  "host_permissions": ["<all_urls>"],
+  "manifest_version": 3
+}
