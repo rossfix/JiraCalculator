@@ -1,28 +1,60 @@
 const init = function () {
   console.log('Content script is running');
 
+  // Function to save input values to local storage
+  const saveInputValues = function () {
+    // Select all input elements for SP
+    const inputElements = document.querySelectorAll('.sp-input');
+
+    // Loop through each input element
+    inputElements.forEach((inputElement) => {
+      // Get the data-issue-id attribute value of the input element's parent div
+      const issueId = inputElement
+        .closest('.sp-container')
+        .getAttribute('data-issue-id');
+
+      // Save the value of the input element to local storage using the issueId as a key
+      localStorage.setItem(`sp-input-${issueId}`, inputElement.value);
+    });
+
+    // Save the capacity input value to local storage
+    const capacityInput = document.querySelector('.sp-capacity-input');
+    localStorage.setItem('sp-capacity-input', capacityInput.value);
+  };
+
+  // Event listener to save input values to local storage when they change
+  document.addEventListener('change', function (event) {
+    const target = event.target;
+    if (
+      target &&
+      (target.classList.contains('sp-input') ||
+        target.classList.contains('sp-capacity-input'))
+    ) {
+      saveInputValues();
+    }
+  });
+
   // Function to calculate total SP
   const calculateTotal = function () {
     // Select the capacity input element
     const capacityInput = document.querySelector('.sp-capacity-input');
-    const capacityValue = parseInt(capacityInput.value);
+    const capacityValue = parseFloat(capacityInput.value) || 0;
 
     // Select all input elements for SP
     const inputElements = document.querySelectorAll('.sp-input');
-    let totalSP = capacityValue || 0;
+    let totalSP = capacityValue;
 
     // Loop through each input element
     inputElements.forEach((inputElement) => {
       // Get the value of the input element
-      const value = parseInt(inputElement.value);
+      const value = parseFloat(inputElement.value) || 0;
 
-      // Check if the value is a valid integer
-      if (!isNaN(value)) {
-        totalSP -= value; // Subtract the value from the capacity and add to totalSP
-      }
+      // Add the value to the total SP
+      totalSP -= value;
     });
 
-    console.log('Total Story Points:', totalSP); // Log the total SP to the console
+    // Round the total SP to two decimal places
+    totalSP = Math.round(totalSP * 100) / 100;
 
     // Update the total SP badge
     updateTotalSPBadge(totalSP);
@@ -232,6 +264,40 @@ const init = function () {
   // Initial handling of parent changes
   handleParentChanges();
 
+  // Function to load input values from local storage
+  const loadInputValues = function () {
+    // Select all input elements for SP
+    const inputElements = document.querySelectorAll('.sp-input');
+
+    // Loop through each input element
+    inputElements.forEach((inputElement) => {
+      // Get the data-issue-id attribute value of the input element's parent div
+      const issueId = inputElement
+        .closest('.sp-container')
+        .getAttribute('data-issue-id');
+
+      // Get the value from local storage based on the issueId
+      const storedValue = localStorage.getItem(`sp-input-${issueId}`);
+
+      // If a value is found in local storage, set the input element's value to it
+      if (storedValue !== null) {
+        inputElement.value = storedValue;
+      }
+    });
+
+    // Load the capacity input value from local storage
+    const capacityInput = document.querySelector('.sp-capacity-input');
+    const storedCapacityValue = localStorage.getItem('sp-capacity-input');
+    if (storedCapacityValue !== null) {
+      capacityInput.value = storedCapacityValue;
+    }
+
+    calculateTotal();
+  };
+
+  // Call the function to load input values when the page loads
+  loadInputValues();
+
   // MutationObserver to monitor changes to the DOM
   const observer = new MutationObserver((mutations) => {
     mutations.forEach((mutation) => {
@@ -240,6 +306,17 @@ const init = function () {
       // Add the additional span
       addAdditionalSpan();
       addCustomDiv();
+
+      mutation.target.querySelectorAll('.sp-input').forEach((inputElement) => {
+        const issueId = inputElement
+          .closest('.sp-container')
+          .getAttribute('data-issue-id');
+        if (issueId) {
+          // Call the function to load input values
+          loadInputValues();
+          return; // Exit the loop if one input field is found
+        }
+      });
     });
   });
 
@@ -250,4 +327,4 @@ const init = function () {
   }
 };
 
-setTimeout(init, 1000);
+setTimeout(init, 3000);
